@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escalas proporcionales — Rex+</title>
+  <style>
+    :root {
+      /* Paleta basada en la marca Rex+ (rexmas.com) */
+      --rex-cyan: #00B5FF;   /* color primario de marca */
+      --ink:      #0B1726;   /* texto principal */
+      --muted:    #5A6B7B;   /* texto secundario */
+      --surface:  #FFFFFF;
+      --bg:       #F4F8FB;
+      --line:     #E3EBF1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+    }
+
+    .app {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 32px 36px 36px;
+      box-shadow: 0 12px 40px rgba(11, 23, 38, 0.06);
+    }
+
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+    }
+
+    header p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Caja didáctica que explica el cálculo */
+    .how {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--rex-cyan);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    .how h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--rex-cyan);
+    }
+    .how ol { margin: 0; padding-left: 20px; }
+    .how li { margin-bottom: 6px; }
+    .how .formula {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+    .how b { color: var(--rex-cyan); }
+
+    .scale {
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+    .scale:first-of-type { border-top: none; }
+
+    .scale__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .scale__label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .scale__dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: none;
+    }
+
+    .scale__range {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .scale__value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 18px;
+      min-width: 64px;
+      text-align: right;
+    }
+
+    .scale__row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Carril de ancho fijo: el slider ocupa un % de este espacio según su rango. */
+    .scale__lane {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .scale__minmax {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      width: 28px;
+      text-align: center;
+      flex: none;
+    }
+
+    /* ---- Slider con color por escala (variable --c) ---- */
+    /* El ancho lo fija scales.js de forma proporcional al recorrido (max−min). */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: none;
+      min-width: 26px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--line);
+      outline: none;
+      cursor: pointer;
+      /* relleno proporcional a la izquierda del thumb */
+      background-image: linear-gradient(var(--c), var(--c));
+      background-repeat: no-repeat;
+      background-size: var(--fill, 50%) 100%;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 3px solid var(--c);
+      box-shadow: 0 2px 6px rgba(11, 23, 38, 0.25);
+      cursor: pointer;
+      transition: transform 0.08s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 3px solid var(--c);
+      box-shadow: 0 2px 6px rgba(11, 23, 38, 0.25);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-progress {
+      background: var(--c);
+      height: 6px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-moz-range-track {
+      background: var(--line);
+      height: 6px;
+      border-radius: 999px;
+    }
+
+    footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .pct {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .pct strong { color: var(--rex-cyan); font-variant-numeric: tabular-nums; }
+
+    button.reset {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    button.reset:hover { border-color: var(--rex-cyan); color: var(--rex-cyan); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Escalas proporcionales</h1>
+      <p>
+        Mueve cualquier slider y los demás se ajustan a la misma posición relativa
+        (escalado lineal min-max). Pasos de 0.1; los valores se muestran con 2 decimales.
+      </p>
+    </header>
+
+    <section class="how">
+      <h2>¿Cómo se calculan los valores?</h2>
+      <ol>
+        <li>
+          La posición del slider que mueves se convierte en un <b>porcentaje de su recorrido</b>:
+          el mínimo es 0&nbsp;% y el máximo 100&nbsp;%. Por ejemplo, un <b>2</b> en la escala 1–3
+          está al <b>50&nbsp;%</b> (justo a la mitad).
+        </li>
+        <li>
+          Ese <b>mismo porcentaje</b> se traslada a las demás escalas. El 50&nbsp;% equivale a
+          <b>3</b> en 1–5, <b>4</b> en 1–7, <b>5.5</b> en 1–10 y <b>50.5</b> en 1–100.
+        </li>
+        <li>
+          Así, valores de escalas distintas son comparables: representan la misma posición relativa.
+        </li>
+      </ol>
+      <span class="formula">valor = mínimo + porcentaje × (máximo − mínimo)</span>
+    </section>
+
+    <!-- Los sliders se generan desde scales.js -->
+    <div id="scales"></div>
+
+    <footer>
+      <span class="pct">Posición relativa: <strong id="pct">50.00%</strong></span>
+      <button class="reset" id="reset" type="button">Centrar todo</button>
+    </footer>
+  </main>
+
+  <script src="scales.js"></script>
+</body>
+</html>
